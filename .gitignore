@@ -1,0 +1,8 @@
+__pycache__/
+ProjectLens/
+project_snapshots/
+data/
+venv/
+images/
+app.log
+.env

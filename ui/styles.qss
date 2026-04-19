@@ -1,0 +1,138 @@
+/* ui/styles.qss */
+
+QDialog {
+    background-color: #f4f7f9;
+    font-family: "Segoe UI", "Tahoma", "Arial";
+}
+
+QLabel#header_title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+QGroupBox {
+    font-weight: bold;
+    font-size: 15px;
+    color: #34495e;
+    border: 1px solid #dcdde1;
+    border-radius: 12px;
+    margin-top: 30px; /* زيادة الهامش العلوي للسماح للعنوان بالظهور */
+    background-color: #ffffff;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top center;
+    padding: 5px 20px;
+    background-color: #3498db;
+    color: white;
+    border-radius: 10px;
+}
+
+/* تحسين حقول الإدخال لضمان ظهور النص بالكامل */
+QLineEdit {
+    font-size: 18px; /* تقليل بسيط للخط ليتناسب مع الحقل */
+    font-weight: 600;
+    padding: 8px 10px; /* موازنة الحواف الداخلية */
+    border: 2px solid #edeff2;
+    border-radius: 8px;
+    background-color: #fdfdfd;
+    color: #2f3640;
+    min-height: 45px; /* تحديد أقل ارتفاع ممكن للحقل */
+}
+
+QLineEdit:focus {
+    border: 2px solid #3498db;
+    background-color: #ffffff;
+}
+
+QLabel {
+    font-size: 14px;
+    font-weight: 600;
+    color: #57606f;
+}
+
+QPushButton#btn_print {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3498db, stop:1 #2980b9);
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    border-radius: 10px;
+    min-height: 60px; /* زيادة ارتفاع زر الطباعة */
+    margin-top: 10px;
+}
+
+QPushButton#btn_print:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #5dade2, stop:1 #3498db);
+}
+
+QPushButton#btn_settings {
+    background-color: #ffffff;
+    border: 1px solid #dcdde1;
+    border-radius: 18px;
+    font-size: 18px;
+}
+
+QPushButton#btn_settings:hover {
+    background-color: #ebf5fb;
+    border: 1px solid #3498db;
+}
+
+/* أضف هذه الأسطر لملف styles.qss الحالي */
+
+/* تنسيق صناديق الاختيار (الطابعات) */
+QComboBox {
+    font-size: 14px;
+    padding: 5px;
+    border: 1px solid #dcdde1;
+    border-radius: 5px;
+    background-color: white;
+    min-height: 30px;
+}
+
+QComboBox:focus {
+    border: 2px solid #3498db;
+}
+
+/* تنسيق صناديق الأرقام (الإحداثيات) */
+QSpinBox {
+    font-size: 14px;
+    padding: 5px;
+    border: 1px solid #dcdde1;
+    border-radius: 5px;
+    background-color: white;
+    min-height: 30px;
+}
+
+QSpinBox:focus {
+    border: 2px solid #3498db;
+    background-color: #f0f9ff;
+}
+
+/* تخصيص أزرار محددة في الإعدادات */
+QPushButton#btn_save_config {
+    background-color: #27ae60; /* لون أخضر للحفظ */
+    color: white;
+    font-weight: bold;
+    min-height: 40px;
+    border-radius: 6px;
+}
+
+QPushButton#btn_save_config:hover {
+    background-color: #2ecc71;
+}
+
+QPushButton#btn_test_print {
+    background-color: #e67e22; /* لون برتقالي للتجربة */
+    color: white;
+    font-weight: bold;
+    min-height: 40px;
+    border-radius: 6px;
+}
+
+/* تحسين شكل منطقة التمرير */
+QScrollArea {
+    border: none;
+    background-color: transparent;
+}

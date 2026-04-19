@@ -1,0 +1,100 @@
+{
+    "printer_name": "XP-80C (copy 1)",
+    "label_width_mm": 40.0,
+    "label_height_mm": 20.0,
+    "gap_mm": 3.0,
+    "offset_x_mm": 1.5,
+    "offset_y_mm": 9.0,
+    "orientation": "Horizontal",
+    "logo": {
+        "show": true,
+        "path": "C:/Users/AES/Desktop/New folder (2)/4.png",
+        "x": 0.0,
+        "y": -5.0,
+        "angle": 0
+    },
+    "elements": {
+        "store": {
+            "show": false,
+            "text": "مجوهرات الذهب",
+            "x": 15.0,
+            "y": -1.0,
+            "size": 14,
+            "font": "cour.ttf",
+            "angle": 0
+        },
+        "metal": {
+            "show": true,
+            "text": "Metal:",
+            "x": 19.0,
+            "y": -6.0,
+            "size": 42,
+            "font": "times.ttf",
+            "angle": 0
+        },
+        "purity": {
+            "show": true,
+            "text": "Titre:751.54",
+            "x": 15.0,
+            "y": -1.0,
+            "size": 23,
+            "font": "arial.ttf",
+            "angle": 0
+        },
+        "extra": {
+            "show": true,
+            "text": "mg/g"
+        },
+        "weight": {
+            "show": true,
+            "text": "Poids: 4.25 g",
+            "x": 18.0,
+            "y": 3.0,
+            "size": 26,
+            "font": "arial.ttf",
+            "angle": 0
+        },
+        "date": {
+            "show": true,
+            "text": "17/04/2026 19.44",
+            "x": 17.0,
+            "y": 8.0,
+            "size": 20,
+            "font": "arial.ttf",
+            "angle": 0
+        }
+    },
+    "label_width": 320,
+    "label_height": 160,
+    "store_name": "Kehili silver",
+    "pos_store_x": 13,
+    "pos_store_y": 29,
+    "font_store": 14,
+    "font_family_store": "times.ttf",
+    "pos_metal_x": 155,
+    "pos_metal_y": 60,
+    "font_metal": 14,
+    "font_family_metal": "arial.ttf",
+    "pos_purity_x": 10,
+    "pos_purity_y": 60,
+    "font_purity": 14,
+    "font_family_purity": "arial.ttf",
+    "pos_weight_x": 80,
+    "pos_weight_y": 100,
+    "font_weight": 18,
+    "font_family_weight": "arial.ttf",
+    "show_date": true,
+    "pos_date_x": 10,
+    "pos_date_y": 130,
+    "font_date": 14,
+    "font_family_date": "arial.ttf",
+    "show_barcode": false,
+    "pos_barcode_x": 10,
+    "pos_barcode_y": 110,
+    "barcode_width": 200,
+    "barcode_height": 40,
+    "logo_settings": {
+        "scale": 11,
+        "threshold": 232
+    }
+}
