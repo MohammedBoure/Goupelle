@@ -1,1 +1,5 @@
-init commit 
+refactor(ui): reorder input fields to prioritize weight
+
+- Moved the "Weight" input field to the top of the QGridLayout for a faster user workflow.
+- Updated the `keyPressEvent` logic to follow the new sequence: Weight -> Gold -> Silver -> Print.
+- Set the default focus to the weight input field on application startup and after successful printing.

@@ -33,7 +33,8 @@ class MainPrintDialog(QDialog):
         
         self.init_ui()
         self.load_professional_style()
-        self.gold_input.setFocus()
+        # جعل التركيز الافتراضي عند فتح البرنامج على الوزن بدلاً من الذهب
+        self.weight_input.setFocus()
 
     def load_professional_style(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -78,29 +79,29 @@ class MainPrintDialog(QDialog):
         validator = QDoubleValidator(0.00, 9999.99, 2)
         validator.setNotation(QDoubleValidator.StandardNotation)
 
-        # الذهب
-        grid.addWidget(QLabel("عيار الذهب:"), 0, 0)
-        self.gold_input = QLineEdit()
-        self.gold_input.setPlaceholderText("مثال: 18")
-        self.gold_input.setValidator(validator)
-        self.gold_input.setAlignment(Qt.AlignCenter)
-        grid.addWidget(self.gold_input, 0, 1)
-
-        # الفضة
-        grid.addWidget(QLabel("عيار الفضة:"), 1, 0)
-        self.silver_input = QLineEdit()
-        self.silver_input.setPlaceholderText("مثال: 925")
-        self.silver_input.setValidator(validator)
-        self.silver_input.setAlignment(Qt.AlignCenter)
-        grid.addWidget(self.silver_input, 1, 1)
-
-        # الوزن
-        grid.addWidget(QLabel("الوزن (غ):"), 2, 0)
+        # 1. الوزن (الصف الأول: 0)
+        grid.addWidget(QLabel("الوزن (غ):"), 0, 0)
         self.weight_input = QLineEdit()
         self.weight_input.setPlaceholderText("0.00")
         self.weight_input.setValidator(validator)
         self.weight_input.setAlignment(Qt.AlignCenter)
-        grid.addWidget(self.weight_input, 2, 1)
+        grid.addWidget(self.weight_input, 0, 1)
+
+        # 2. الذهب (الصف الثاني: 1)
+        grid.addWidget(QLabel("عيار الذهب:"), 1, 0)
+        self.gold_input = QLineEdit()
+        self.gold_input.setPlaceholderText("مثال: 18")
+        self.gold_input.setValidator(validator)
+        self.gold_input.setAlignment(Qt.AlignCenter)
+        grid.addWidget(self.gold_input, 1, 1)
+
+        # 3. الفضة (الصف الثالث: 2)
+        grid.addWidget(QLabel("عيار الفضة:"), 2, 0)
+        self.silver_input = QLineEdit()
+        self.silver_input.setPlaceholderText("مثال: 925")
+        self.silver_input.setValidator(validator)
+        self.silver_input.setAlignment(Qt.AlignCenter)
+        grid.addWidget(self.silver_input, 2, 1)
 
         main_layout.addWidget(group_box)
         
@@ -120,17 +121,23 @@ class MainPrintDialog(QDialog):
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             focused = self.focusWidget()
-            if focused == self.gold_input:
+            
+            # إذا كان في حقل الوزن، ينتقل للذهب
+            if focused == self.weight_input:
+                self.gold_input.setFocus()
+                
+            # إذا كان في حقل الذهب
+            elif focused == self.gold_input:
                 if self.gold_input.text().strip():
                     self.silver_input.clear()
-                    self.weight_input.setFocus()
+                    self.print_label()
                 else:
                     self.silver_input.setFocus()
+                    
+            # إذا كان في حقل الفضة
             elif focused == self.silver_input:
                 if self.silver_input.text().strip():
                     self.gold_input.clear()
-                self.weight_input.setFocus()
-            elif focused == self.weight_input:
                 self.print_label()
         else:
             super().keyPressEvent(event)
@@ -277,7 +284,6 @@ class MainPrintDialog(QDialog):
                         p_text += f" {extra_txt}"
                 els["purity"]["text"] = p_text
                 
-            # 🟢 إجبار التاريخ والوقت ليكون اللحظة الحالية دائماً (تجاوز النص المحفوظ)
             if "date" in els:
                 els["date"]["text"] = datetime.now().strftime("%d/%m/%Y %H:%M")
 
@@ -328,7 +334,8 @@ class MainPrintDialog(QDialog):
         self.gold_input.clear()
         self.silver_input.clear()
         self.weight_input.clear()
-        self.gold_input.setFocus()
+        # إعادة التركيز إلى الوزن بعد إتمام الطباعة
+        self.weight_input.setFocus()
 
     def open_settings(self):
         dialog = SettingsDialog(self)
