@@ -6,14 +6,25 @@
     "offset_x_mm": 1.5,
     "offset_y_mm": 9.0,
     "orientation": "Horizontal",
+    "ref_gold": 500.0,
+    "ref_silver": 925.0,
     "logo": {
         "show": true,
-        "path": "C:/Users/AES/Desktop/New folder (2)/4.png",
+        "path": "H:/githup/Goupelle/images/4.png",
         "x": 0.0,
         "y": -5.0,
         "angle": 0
     },
     "elements": {
+        "id": {
+            "show": true,
+            "text": "ID:",
+            "x": 31.0,
+            "y": -4.0,
+            "size": 10,
+            "font": "arial.ttf",
+            "angle": 0
+        },
         "store": {
             "show": false,
             "text": "مجوهرات الذهب",
@@ -25,7 +36,7 @@
         },
         "metal": {
             "show": true,
-            "text": "Metal:",
+            "text": "",
             "x": 19.0,
             "y": -6.0,
             "size": 42,
@@ -34,8 +45,8 @@
         },
         "purity": {
             "show": true,
-            "text": "Titre:751.54",
-            "x": 15.0,
+            "text": "Titre:",
+            "x": 16.0,
             "y": -1.0,
             "size": 23,
             "font": "arial.ttf",
@@ -47,19 +58,28 @@
         },
         "weight": {
             "show": true,
-            "text": "Poids: 4.25 g",
+            "text": "Poids:",
             "x": 18.0,
-            "y": 3.0,
+            "y": 2.0,
             "size": 26,
             "font": "arial.ttf",
             "angle": 0
         },
         "date": {
             "show": true,
-            "text": "17/04/2026 19.44",
+            "text": "",
             "x": 17.0,
             "y": 8.0,
             "size": 20,
+            "font": "arial.ttf",
+            "angle": 0
+        },
+        "equiv_weight": {
+            "show": true,
+            "text": "Eq(999.9):",
+            "x": 18.0,
+            "y": 5.0,
+            "size": 19,
             "font": "arial.ttf",
             "angle": 0
         }
