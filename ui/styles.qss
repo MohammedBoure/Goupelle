@@ -1,7 +1,7 @@
 /* ui/styles.qss */
 
 QDialog {
-    background-color: #f4f7f9;
+    background-color: #ffffff;
     font-family: "Segoe UI", "Tahoma", "Arial";
 }
 
@@ -37,7 +37,7 @@ QLineEdit {
     padding: 8px 10px; /* موازنة الحواف الداخلية */
     border: 2px solid #edeff2;
     border-radius: 8px;
-    background-color: #fdfdfd;
+    background-color: #ffffff;
     color: #2f3640;
     min-height: 45px; /* تحديد أقل ارتفاع ممكن للحقل */
 }
@@ -107,7 +107,7 @@ QSpinBox {
 
 QSpinBox:focus {
     border: 2px solid #3498db;
-    background-color: #f0f9ff;
+    background-color: #ffffff;
 }
 
 /* تخصيص أزرار محددة في الإعدادات */

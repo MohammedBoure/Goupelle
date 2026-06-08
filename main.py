@@ -3,7 +3,7 @@ import sys
 import os
 import logging
 from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QPalette, QColor
 from ui.main_dialog import MainPrintDialog
 
 logging.basicConfig(
@@ -23,6 +23,20 @@ def get_resource_path(relative_path):
 def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
+    light_palette = QPalette()
+    light_palette.setColor(QPalette.Window, QColor("#ffffff"))
+    light_palette.setColor(QPalette.WindowText, QColor("#0f172a"))
+    light_palette.setColor(QPalette.Base, QColor("#ffffff"))
+    light_palette.setColor(QPalette.AlternateBase, QColor("#f8fafc"))
+    light_palette.setColor(QPalette.ToolTipBase, QColor("#ffffff"))
+    light_palette.setColor(QPalette.ToolTipText, QColor("#0f172a"))
+    light_palette.setColor(QPalette.Text, QColor("#0f172a"))
+    light_palette.setColor(QPalette.Button, QColor("#ffffff"))
+    light_palette.setColor(QPalette.ButtonText, QColor("#0f172a"))
+    light_palette.setColor(QPalette.BrightText, QColor("#ffffff"))
+    light_palette.setColor(QPalette.Highlight, QColor("#2563eb"))
+    light_palette.setColor(QPalette.HighlightedText, QColor("#ffffff"))
+    app.setPalette(light_palette)
     
     # 1. تعيين أيقونة البرنامج
     logo_path = get_resource_path(os.path.join("ui", "logo.png"))
@@ -37,8 +51,8 @@ def main():
         QWidget {
             font-family: "Segoe UI", "Tajawal", "Arial";
         }
-        QDialog { 
-            background-color: #f0f4f8; /* لون رمادي مزرق هادئ جداً مريح للعين */
+        QDialog, QWidget { 
+            background-color: #ffffff;
         }
         
         /* عنوان البرنامج */
@@ -83,7 +97,7 @@ def main():
 
         /* حقول الإدخال */
         QLineEdit { 
-            background-color: #f8fafc;
+            background-color: #ffffff;
             border: 2px solid #e2e8f0; 
             border-radius: 10px; 
             min-height: 40px; /* الطول المناسب لجعل الحقل مريحاً للكتابة */
@@ -132,7 +146,7 @@ def main():
             padding: 6px; 
             border: 2px solid #e2e8f0; 
             border-radius: 8px; 
-            background: #f8fafc; 
+            background: #ffffff; 
             min-height: 28px; 
             font-size: 14px;
             font-weight: bold;

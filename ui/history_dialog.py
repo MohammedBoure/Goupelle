@@ -200,7 +200,7 @@ class HistoryDialog(QDialog):
     def apply_styles(self):
         self.setStyleSheet("""
             QDialog {
-                background-color: #f4f7f9;
+                background-color: #ffffff;
                 font-family: "Segoe UI", "Arial";
             }
             QFrame#filter_frame {
@@ -238,7 +238,7 @@ class HistoryDialog(QDialog):
                 border: 1px solid #bdc3c7;
                 border-radius: 5px;
                 font-size: 14px;
-                background-color: #fdfdfd;
+                background-color: #ffffff;
                 min-height: 25px;
             }
             QLineEdit:focus, QDateEdit:focus {
@@ -257,7 +257,7 @@ class HistoryDialog(QDialog):
                 background-color: #3498db;
             }
             QPushButton#btn_reset {
-                background-color: #ecf0f1;
+                background-color: #ffffff;
                 color: #2c3e50;
                 font-weight: bold;
                 border-radius: 5px;
@@ -266,11 +266,11 @@ class HistoryDialog(QDialog):
                 font-size: 14px;
             }
             QPushButton#btn_reset:hover {
-                background-color: #e0e6ed;
+                background-color: #f8fafc;
             }
             QTableWidget {
                 background-color: white;
-                alternate-background-color: #f8f9fa;
+                alternate-background-color: #ffffff;
                 border: 1px solid #dcdde1;
                 border-radius: 5px;
                 font-size: 14px;
@@ -278,7 +278,7 @@ class HistoryDialog(QDialog):
                 selection-color: white;
             }
             QHeaderView::section {
-                background-color: #ecf0f1;
+                background-color: #ffffff;
                 color: #2c3e50;
                 padding: 10px;
                 font-weight: bold;
