@@ -1,0 +1,7 @@
+PySide6
+Pillow
+pywin32
+arabic-reshaper
+python-bidi
+PyInstaller
+mysql-connector-python

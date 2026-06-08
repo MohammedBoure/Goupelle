@@ -13,6 +13,11 @@ from .settings_dialog import SettingsDialog
 from database import init_db, save_print_record
 import sys
 
+EXTRA_CONVERSION_REFS = (
+    ("999.9", 999.9),
+    ("750", 750.0),
+)
+
 try:
     from PIL import Image, ImageDraw, ImageFont, ImageOps
     import win32print
@@ -29,7 +34,7 @@ class MainPrintDialog(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("نظام طباعة ملصقات المجوهرات")
-        self.setFixedSize(500, 560) 
+        self.setFixedSize(500, 660)
         self.config_file = "label_config.json"
         
         init_db()
@@ -134,6 +139,26 @@ class MainPrintDialog(QDialog):
         """)
         grid.addWidget(self.lbl_live_equiv, 4, 1)
 
+        self.extra_conversion_labels = {}
+        for row_offset, (ref_label, _) in enumerate(EXTRA_CONVERSION_REFS, start=5):
+            title = QLabel(f"{ref_label}:")
+            title.setStyleSheet("font-weight: bold; color: #2c3e50;")
+            grid.addWidget(title, row_offset, 0)
+
+            value_label = QLabel("0.00 g")
+            value_label.setAlignment(Qt.AlignCenter)
+            value_label.setStyleSheet("""
+                background-color: #fff7ed;
+                color: #9a3412;
+                min-height: 34px;
+                font-size: 18px;
+                font-weight: 800;
+                border-radius: 10px;
+                border: 2px dashed #fed7aa;
+            """)
+            grid.addWidget(value_label, row_offset, 1)
+            self.extra_conversion_labels[ref_label] = value_label
+
         main_layout.addWidget(group_box)
         
         self.btn_print = QPushButton("🖨️ طباعة ملصق (Enter)")
@@ -163,6 +188,7 @@ class MainPrintDialog(QDialog):
             
             equiv_val = 0.0
             current_ref = 0.0
+            actual_purity = 0.0
             
             if gold_val:
                 actual_purity = float(gold_val)
@@ -180,9 +206,18 @@ class MainPrintDialog(QDialog):
                 self.lbl_live_equiv.setText(f"{equiv_val:.2f} g  ({int(current_ref)})")
             else:
                 self.lbl_live_equiv.setText("0.00 g")
+            self.update_extra_conversions(actual_weight, actual_purity)
                 
         except ValueError:
             self.lbl_live_equiv.setText("0.00 g")
+            self.update_extra_conversions(0.0, 0.0)
+
+    def update_extra_conversions(self, actual_weight, actual_purity):
+        for ref_label, ref_value in EXTRA_CONVERSION_REFS:
+            result = 0.0
+            if actual_weight > 0 and actual_purity > 0 and ref_value > 0:
+                result = (actual_weight * actual_purity) / ref_value
+            self.extra_conversion_labels[ref_label].setText(f"{result:.2f} g")
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
