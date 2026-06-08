@@ -6,3 +6,5 @@ venv/
 images/
 app.log
 .env
+build/
+dist/
