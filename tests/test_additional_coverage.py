@@ -1,9 +1,11 @@
 import json
+import runpy
 from types import SimpleNamespace
 
 import pytest
 from PIL import Image
-from PySide6.QtGui import QImage, QPalette
+from PySide6.QtCore import QEvent
+from PySide6.QtGui import QImage, QKeyEvent, QPalette
 from PySide6.QtWidgets import QFileDialog
 
 import database
@@ -115,6 +117,24 @@ def fake_win32print(writes=None, open_error=None):
     )
 
 
+def exec_module_with_blocked_imports(monkeypatch, module_name, path, blocked_names):
+    import builtins
+    import importlib.util
+
+    original_import = builtins.__import__
+
+    def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if any(name == blocked or name.startswith(f"{blocked}.") for blocked in blocked_names):
+            raise ImportError(f"blocked {name}")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", guarded_import)
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def test_get_resource_path_uses_source_directory(monkeypatch):
     monkeypatch.setattr(app_main.sys, "frozen", False, raising=False)
 
@@ -161,6 +181,55 @@ def test_main_sets_window_icon_when_logo_exists(monkeypatch):
         app_main.main()
 
     assert FakeApplication.instances[0].window_icon is not None
+
+
+def test_main_script_entrypoint_calls_main(monkeypatch):
+    FakeApplication.instances.clear()
+    monkeypatch.setattr("PySide6.QtWidgets.QApplication", FakeApplication)
+    monkeypatch.setattr("PySide6.QtGui.QIcon", lambda path: ("icon", path))
+    monkeypatch.setitem(app_main.sys.modules, "ui.main_dialog", SimpleNamespace(MainPrintDialog=FakeDialog))
+    monkeypatch.setattr(app_main.os.path, "exists", lambda path: False)
+    monkeypatch.setattr(app_main.sys, "exit", lambda code: (_ for _ in ()).throw(ExitCalled(code)))
+
+    with pytest.raises(ExitCalled) as exc:
+        runpy.run_path(app_main.__file__, run_name="__main__")
+
+    assert exc.value.code == 7
+    assert FakeDialog.shown is True
+
+
+def test_ui_modules_log_missing_optional_printing_imports(monkeypatch, caplog):
+    exec_module_with_blocked_imports(
+        monkeypatch,
+        "ui.main_dialog_missing_print_libs",
+        main_dialog_module.__file__,
+        {"PIL"},
+    )
+    exec_module_with_blocked_imports(
+        monkeypatch,
+        "ui.settings_dialog_missing_print_libs",
+        settings_dialog_module.__file__,
+        {"PIL"},
+    )
+
+    assert "Missing printing libraries" in caplog.text
+
+
+def test_ui_modules_log_missing_arabic_imports(monkeypatch, caplog):
+    exec_module_with_blocked_imports(
+        monkeypatch,
+        "ui.main_dialog_missing_arabic_libs",
+        main_dialog_module.__file__,
+        {"arabic_reshaper"},
+    )
+    exec_module_with_blocked_imports(
+        monkeypatch,
+        "ui.settings_dialog_missing_arabic_libs",
+        settings_dialog_module.__file__,
+        {"arabic_reshaper"},
+    )
+
+    assert "Arabic reshaping libraries missing" in caplog.text
 
 
 def test_database_functions_return_safe_values_on_connection_errors(monkeypatch):
@@ -308,6 +377,73 @@ def test_settings_get_pil_image_draws_logo_and_vertical_orientation(settings_dia
     assert image.size == (160, 320)
 
 
+def test_settings_draw_rotated_text_handles_empty_and_reshaper_errors(settings_dialog, monkeypatch):
+    dialog, _ = settings_dialog
+    image = settings_dialog_module.Image.new("RGBA", (120, 60), (255, 255, 255, 255))
+    font = settings_dialog_module.ImageFont.load_default()
+
+    dialog._draw_rotated_text(image, "", 0, 0, font, 0)
+    monkeypatch.setattr(
+        settings_dialog_module.arabic_reshaper,
+        "reshape",
+        lambda text: (_ for _ in ()).throw(RuntimeError("reshape failed")),
+    )
+    dialog._draw_rotated_text(image, "text", 5, 5, font, 0)
+
+    assert image.getbbox() is not None
+
+
+def test_settings_get_pil_image_handles_zero_size(settings_dialog):
+    dialog, _ = settings_dialog
+    dialog.sp_w.value = lambda: 0
+
+    assert dialog.get_pil_image() is None
+
+
+def test_settings_get_pil_image_handles_logo_errors_and_preview_filters(settings_dialog, monkeypatch, tmp_path):
+    dialog, _ = settings_dialog
+    logo_path = create_png(tmp_path / "broken-logo.png", (0, 0, 0, 255))
+    drawn_texts = []
+
+    dialog.chk_logo.setChecked(True)
+    dialog.lbl_logo_path.setText(str(logo_path))
+    dialog.chk_equiv_weight.setChecked(True)
+    dialog.chk_equiv_gold.setChecked(False)
+    dialog.chk_conv_silver_925.setChecked(True)
+    monkeypatch.setattr(settings_dialog_module.Image, "open", lambda path: (_ for _ in ()).throw(RuntimeError("logo failed")))
+    monkeypatch.setattr(
+        dialog,
+        "_draw_rotated_text",
+        lambda img, text, *args: drawn_texts.append(text),
+    )
+
+    image = dialog.get_pil_image()
+
+    assert image is not None
+    assert not any("4.37 g" in text for text in drawn_texts)
+    assert not any("3.45 g" in text for text in drawn_texts)
+
+
+def test_settings_get_pil_image_uses_default_font_when_font_file_missing(settings_dialog, monkeypatch):
+    dialog, _ = settings_dialog
+    dialog.chk_store.setChecked(True)
+    dialog.cmb_store_f.addItem("definitely-missing-font.ttf")
+    dialog.cmb_store_f.setCurrentText("definitely-missing-font.ttf")
+
+    assert dialog.get_pil_image() is not None
+
+
+def test_settings_save_config_reports_write_errors(settings_dialog, monkeypatch, tmp_path):
+    dialog, _ = settings_dialog
+    errors = []
+    dialog.config_file = str(tmp_path)
+    monkeypatch.setattr(settings_dialog_module.QMessageBox, "critical", lambda *args: errors.append(args))
+
+    dialog.save_config()
+
+    assert errors
+
+
 def test_settings_print_test_warns_without_printer(settings_dialog):
     dialog, _ = settings_dialog
 
@@ -392,6 +528,9 @@ def test_main_dialog_key_press_navigation_and_print_calls(main_dialog, monkeypat
     assert print_calls == ["printed", "printed"]
     assert dialog.gold_input.text() == ""
 
+    escape_event = QKeyEvent(QEvent.KeyPress, main_dialog_module.Qt.Key_Escape, main_dialog_module.Qt.NoModifier)
+    dialog.keyPressEvent(escape_event)
+
 
 def test_main_dialog_draw_rotated_text_handles_empty_arabic_and_angle(main_dialog):
     dialog, _ = main_dialog
@@ -402,6 +541,30 @@ def test_main_dialog_draw_rotated_text_handles_empty_arabic_and_angle(main_dialo
     dialog._draw_rotated_text(image, "ذهب", 5, 5, font, 90)
 
     assert image.getbbox() is not None
+
+
+def test_main_dialog_draw_rotated_text_ignores_reshaper_errors(main_dialog, monkeypatch):
+    dialog, _ = main_dialog
+    image = main_dialog_module.Image.new("RGBA", (160, 80), (255, 255, 255, 255))
+    font = main_dialog_module.ImageFont.load_default()
+    monkeypatch.setattr(
+        main_dialog_module.arabic_reshaper,
+        "reshape",
+        lambda text: (_ for _ in ()).throw(RuntimeError("reshape failed")),
+    )
+
+    dialog._draw_rotated_text(image, "\u0630\u0647\u0628", 5, 5, font, 0)
+
+    assert image.getbbox() is not None
+
+
+def test_main_dialog_load_config_handles_invalid_json(main_dialog, tmp_path):
+    dialog, _ = main_dialog
+    (tmp_path / "label_config.json").write_text("{bad json", encoding="utf-8")
+
+    config = dialog.load_config()
+
+    assert config["label_width_mm"] == 40
 
 
 def test_main_dialog_print_label_draws_logo_rotates_label_and_clears_inputs(
@@ -461,6 +624,133 @@ def test_main_dialog_print_label_handles_invalid_numeric_purity(main_dialog, mon
     assert saved_records[0]["purity"] == 0.0
     assert saved_records[0]["equiv_weight"] == 0.0
     assert "Eq: 0.00 g" in drawn_texts
+
+
+def test_main_dialog_print_label_uses_default_font_for_missing_font(main_dialog, monkeypatch, tmp_path):
+    dialog, tmp_path = main_dialog
+    write_main_config(
+        tmp_path / "label_config.json",
+        elements={
+            "store": {
+                "show": True,
+                "text": "Store",
+                "x": 1,
+                "y": 1,
+                "size": 12,
+                "font": "definitely-missing-font.ttf",
+                "angle": 0,
+            },
+        },
+    )
+    monkeypatch.setattr(main_dialog_module, "save_print_record", lambda **kwargs: 11)
+    monkeypatch.setattr(main_dialog_module, "win32print", fake_win32print(), raising=False)
+
+    dialog.weight_input.setText("4.25")
+    dialog.gold_input.setText("750")
+    dialog.print_label()
+
+    assert dialog.weight_input.text() == ""
+
+
+def test_main_dialog_print_label_handles_logo_open_errors(main_dialog, monkeypatch, tmp_path):
+    dialog, tmp_path = main_dialog
+    logo_path = create_png(tmp_path / "broken-logo.png", (0, 0, 0, 255))
+    write_main_config(
+        tmp_path / "label_config.json",
+        logo={"show": True, "path": str(logo_path), "x": 0, "y": 0, "angle": 0},
+        elements={},
+    )
+    monkeypatch.setattr(main_dialog_module.Image, "open", lambda path: (_ for _ in ()).throw(RuntimeError("logo failed")))
+    monkeypatch.setattr(main_dialog_module, "save_print_record", lambda **kwargs: 12)
+    monkeypatch.setattr(main_dialog_module, "win32print", fake_win32print(), raising=False)
+
+    dialog.weight_input.setText("4.25")
+    dialog.gold_input.setText("750")
+    dialog.print_label()
+
+    assert dialog.weight_input.text() == ""
+
+
+def test_main_dialog_print_label_hides_gold_equiv_and_skips_missing_conversion(
+    main_dialog,
+    monkeypatch,
+    tmp_path,
+):
+    dialog, tmp_path = main_dialog
+    drawn_texts = []
+    write_main_config(
+        tmp_path / "label_config.json",
+        elements={
+            "equiv_weight": {
+                "show": True,
+                "text": "Eq:",
+                "x": 1,
+                "y": 1,
+                "size": 12,
+                "font": "arial.ttf",
+                "angle": 0,
+                "show_for_gold": False,
+            },
+            "conv_gold_730": {
+                "show": True,
+                "text": "730:",
+                "x": 1,
+                "y": 4,
+                "size": 12,
+                "font": "arial.ttf",
+                "angle": 0,
+            },
+        },
+    )
+    monkeypatch.setattr(dialog, "_draw_rotated_text", lambda img, text, *args: drawn_texts.append(text))
+    monkeypatch.setitem(
+        main_dialog_module.LABEL_CONVERSION_ELEMENTS,
+        "conv_missing",
+        {"metal": "Or", "ref": 760.0, "label": "Missing"},
+    )
+    monkeypatch.setattr(main_dialog_module, "save_print_record", lambda **kwargs: 13)
+    monkeypatch.setattr(main_dialog_module, "win32print", fake_win32print(), raising=False)
+
+    dialog.weight_input.setText("4.25")
+    dialog.gold_input.setText("750")
+    dialog.print_label()
+
+    assert not any(text.startswith("Eq:") for text in drawn_texts)
+    assert any(text.startswith("730:") for text in drawn_texts)
+
+
+def test_main_dialog_print_label_uses_conversion_ref_fallback(main_dialog, monkeypatch, tmp_path):
+    dialog, tmp_path = main_dialog
+    drawn_texts = []
+    write_main_config(
+        tmp_path / "label_config.json",
+        fallback_ref=800,
+        elements={
+            "conv_gold_730": {
+                "show": True,
+                "text": "Fallback:",
+                "x": 1,
+                "y": 1,
+                "size": 12,
+                "font": "arial.ttf",
+                "angle": 0,
+            },
+        },
+    )
+    monkeypatch.setitem(
+        main_dialog_module.LABEL_CONVERSION_ELEMENTS,
+        "conv_gold_730",
+        {"metal": "Or", "ref": None, "ref_key": "fallback_ref", "default_ref": 730.0, "label": "Fallback"},
+    )
+    monkeypatch.setattr(dialog, "_draw_rotated_text", lambda img, text, *args: drawn_texts.append(text))
+    monkeypatch.setattr(main_dialog_module, "save_print_record", lambda **kwargs: 14)
+    monkeypatch.setattr(main_dialog_module, "win32print", fake_win32print(), raising=False)
+
+    dialog.weight_input.setText("8")
+    dialog.gold_input.setText("750")
+    dialog.print_label()
+
+    assert "Fallback: 7.50 g" in drawn_texts
 
 
 def test_main_dialog_print_label_warns_when_printer_missing(main_dialog, monkeypatch):
@@ -535,3 +825,23 @@ def test_main_dialog_open_history_executes_dialog(main_dialog, monkeypatch):
     dialog.open_history()
 
     assert calls == ["history"]
+
+
+def test_main_dialog_open_history_warns_when_dialog_import_fails(main_dialog, monkeypatch):
+    import builtins
+
+    dialog, _ = main_dialog
+    infos = []
+    original_import = builtins.__import__
+
+    def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "history_dialog" and level == 1:
+            raise ImportError("missing history dialog")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", guarded_import)
+    monkeypatch.setattr(main_dialog_module.QMessageBox, "information", lambda *args: infos.append(args))
+
+    dialog.open_history()
+
+    assert infos
