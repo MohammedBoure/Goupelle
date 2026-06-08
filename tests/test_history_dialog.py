@@ -165,3 +165,115 @@ def test_history_table_updates_after_new_record_is_added(qapp, monkeypatch, tmp_
         ]
     finally:
         dialog.close()
+
+
+def test_history_missing_database_file_does_not_crash(qapp, monkeypatch, tmp_path):
+    missing_db_path = tmp_path / "missing_print_history.db"
+
+    dialog = open_history_dialog(qapp, monkeypatch, missing_db_path)
+
+    try:
+        assert dialog.table.rowCount() == 0
+        assert dialog.lbl_det_id.text() == "-"
+    finally:
+        dialog.close()
+
+
+def test_history_search_by_id_filters_to_matching_record(qapp, monkeypatch, tmp_path):
+    db_path = tmp_path / "print_history.db"
+    create_history_db(db_path)
+    insert_record(db_path, "2026-06-08 10:00:00", "Or", 750.0, 4.25, 4.37)
+    second_id = insert_record(db_path, "2026-06-08 11:00:00", "Argent", 925.0, 10.0, 10.0)
+
+    dialog = open_history_dialog(qapp, monkeypatch, db_path)
+
+    try:
+        dialog.current_page = 3
+        dialog.inp_search_id.setText(str(second_id))
+        dialog.on_search_clicked()
+
+        assert dialog.current_page == 1
+        assert dialog.table.rowCount() == 1
+        assert table_row_texts(dialog, 0) == [
+            "2",
+            "2026-06-08 11:00:00",
+            "Argent",
+            "925",
+            "10 g",
+        ]
+    finally:
+        dialog.close()
+
+
+def test_history_reset_filters_clears_search_dates_and_page(qapp, monkeypatch, tmp_path):
+    db_path = tmp_path / "print_history.db"
+    create_history_db(db_path)
+    dialog = open_history_dialog(qapp, monkeypatch, db_path)
+    load_calls = []
+
+    try:
+        dialog.inp_search_id.setText("42")
+        dialog.date_from.setDate(QDate(2020, 1, 1))
+        dialog.date_to.setDate(QDate(2020, 1, 2))
+        dialog.current_page = 5
+        monkeypatch.setattr(dialog, "load_data", lambda: load_calls.append("called"))
+
+        dialog.reset_filters()
+
+        assert dialog.inp_search_id.text() == ""
+        assert dialog.current_page == 1
+        assert dialog.date_from.date() == QDate.currentDate().addDays(-30)
+        assert dialog.date_to.date() == QDate.currentDate()
+        assert load_calls == ["called"]
+    finally:
+        dialog.close()
+
+
+def test_history_prev_and_next_page_load_expected_pages(qapp, monkeypatch, tmp_path):
+    db_path = tmp_path / "print_history.db"
+    create_history_db(db_path)
+    for index in range(3):
+        insert_record(
+            db_path,
+            f"2026-06-08 10:0{index}:00",
+            "Or",
+            750.0,
+            4.25 + index,
+            4.37 + index,
+        )
+
+    dialog = open_history_dialog(qapp, monkeypatch, db_path)
+
+    try:
+        dialog.page_size = 1
+        dialog.current_page = 1
+        dialog.load_data()
+
+        assert dialog.total_pages == 3
+        assert dialog.btn_next.isEnabled()
+        assert not dialog.btn_prev.isEnabled()
+
+        dialog.next_page()
+        assert dialog.current_page == 2
+        assert dialog.btn_next.isEnabled()
+        assert dialog.btn_prev.isEnabled()
+
+        dialog.prev_page()
+        assert dialog.current_page == 1
+        assert dialog.btn_next.isEnabled()
+        assert not dialog.btn_prev.isEnabled()
+    finally:
+        dialog.close()
+
+
+def test_history_load_data_handles_sql_errors(qapp, monkeypatch, tmp_path):
+    broken_db_path = tmp_path / "broken_print_history.db"
+    broken_db_path.write_text("not a sqlite database", encoding="utf-8")
+
+    dialog = open_history_dialog(qapp, monkeypatch, broken_db_path)
+
+    try:
+        dialog.load_data()
+        assert dialog.table.rowCount() == 0
+    finally:
+        dialog.close()
