@@ -353,10 +353,6 @@ class SettingsDialog(QDialog):
 
         for key in elements_keys:
             if getattr(self, f"chk_{key}").isChecked():
-                
-                if key in LABEL_CONVERSION_ELEMENTS and LABEL_CONVERSION_ELEMENTS[key]["metal"] != test_values["metal"]:
-                    continue
-                
                 prefix = getattr(self, f"inp_{key}").text()
                 display_text = f"{prefix} {test_values[key]}" if key != "store" else prefix
                 if key == "purity" and self.chk_extra.isChecked():

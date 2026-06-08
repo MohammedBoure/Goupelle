@@ -400,7 +400,7 @@ def test_settings_get_pil_image_handles_zero_size(settings_dialog):
     assert dialog.get_pil_image() is None
 
 
-def test_settings_get_pil_image_handles_logo_errors_and_preview_filters(settings_dialog, monkeypatch, tmp_path):
+def test_settings_get_pil_image_handles_logo_errors_and_draws_enabled_preview_conversions(settings_dialog, monkeypatch, tmp_path):
     dialog, _ = settings_dialog
     logo_path = create_png(tmp_path / "broken-logo.png", (0, 0, 0, 255))
     drawn_texts = []
@@ -419,7 +419,7 @@ def test_settings_get_pil_image_handles_logo_errors_and_preview_filters(settings
 
     assert image is not None
     assert not any("4.37 g" in text for text in drawn_texts)
-    assert not any("3.45 g" in text for text in drawn_texts)
+    assert any("3.45 g" in text for text in drawn_texts)
 
 
 def test_settings_get_pil_image_uses_default_font_when_font_file_missing(settings_dialog, monkeypatch):

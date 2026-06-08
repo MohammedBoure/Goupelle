@@ -153,6 +153,27 @@ def test_save_config_writes_conversion_element_options(settings_dialog):
         assert element["angle"] == 270
 
 
+def test_preview_draws_all_enabled_conversion_elements(settings_dialog, monkeypatch):
+    dialog, _ = settings_dialog
+    drawn_texts = []
+
+    for key in CONVERSION_ELEMENT_KEYS:
+        getattr(dialog, f"chk_{key}").setChecked(True)
+
+    monkeypatch.setattr(
+        dialog,
+        "_draw_rotated_text",
+        lambda img, text, x, y, font, angle: drawn_texts.append(text),
+    )
+
+    dialog.get_pil_image()
+
+    assert "730: 4.37 g" in drawn_texts
+    assert "750: 4.25 g" in drawn_texts
+    assert "925: 3.45 g" in drawn_texts
+    assert "999.9: 3.19 g" in drawn_texts
+
+
 def test_equivalent_weight_setting_is_removed(settings_dialog):
     dialog, config_path = settings_dialog
 
