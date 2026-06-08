@@ -20,8 +20,7 @@ def get_resource_path(relative_path):
         base_path = os.path.abspath(os.path.dirname(__file__))
     return os.path.join(base_path, relative_path)
 
-def main():
-    app = QApplication(sys.argv)
+def apply_white_theme(app):
     app.setStyle("Fusion")
     light_palette = QPalette()
     light_palette.setColor(QPalette.Window, QColor("#ffffff"))
@@ -37,7 +36,12 @@ def main():
     light_palette.setColor(QPalette.Highlight, QColor("#2563eb"))
     light_palette.setColor(QPalette.HighlightedText, QColor("#ffffff"))
     app.setPalette(light_palette)
-    
+
+
+def main():
+    app = QApplication(sys.argv)
+    apply_white_theme(app)
+
     # 1. تعيين أيقونة البرنامج
     logo_path = get_resource_path(os.path.join("ui", "logo.png"))
     if os.path.exists(logo_path):
