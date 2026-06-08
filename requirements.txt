@@ -5,3 +5,4 @@ arabic-reshaper
 python-bidi
 PyInstaller
 mysql-connector-python
+pytest
