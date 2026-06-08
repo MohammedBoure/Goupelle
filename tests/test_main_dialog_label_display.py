@@ -175,7 +175,6 @@ def test_custom_label_prefixes_are_drawn_before_values(main_dialog, fake_printin
             "metal": {"show": True, "text": "Metal is", "x": 1, "y": 1, "size": 12, "font": "arial.ttf", "angle": 0},
             "purity": {"show": True, "text": "Titre =", "x": 1, "y": 2, "size": 12, "font": "arial.ttf", "angle": 0},
             "weight": {"show": True, "text": "Poids =", "x": 1, "y": 3, "size": 12, "font": "arial.ttf", "angle": 0},
-            "equiv_weight": {"show": True, "text": "Eq =", "x": 1, "y": 4, "size": 12, "font": "arial.ttf", "angle": 0},
             "conv_gold_750": {"show": True, "text": "Or 750 =", "x": 1, "y": 5, "size": 12, "font": "arial.ttf", "angle": 0},
         },
     )
@@ -185,5 +184,4 @@ def test_custom_label_prefixes_are_drawn_before_values(main_dialog, fake_printin
     assert "Metal is Or" in drawn_texts
     assert "Titre = 750 mg/g" in drawn_texts
     assert "Poids = 4.25 g" in drawn_texts
-    assert "Eq = 4.37 g" in drawn_texts
     assert "Or 750 = 4.25 g" in drawn_texts

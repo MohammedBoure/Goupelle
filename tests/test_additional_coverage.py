@@ -407,8 +407,6 @@ def test_settings_get_pil_image_handles_logo_errors_and_preview_filters(settings
 
     dialog.chk_logo.setChecked(True)
     dialog.lbl_logo_path.setText(str(logo_path))
-    dialog.chk_equiv_weight.setChecked(True)
-    dialog.chk_equiv_gold.setChecked(False)
     dialog.chk_conv_silver_925.setChecked(True)
     monkeypatch.setattr(settings_dialog_module.Image, "open", lambda path: (_ for _ in ()).throw(RuntimeError("logo failed")))
     monkeypatch.setattr(
@@ -623,7 +621,7 @@ def test_main_dialog_print_label_handles_invalid_numeric_purity(main_dialog, mon
 
     assert saved_records[0]["purity"] == 0.0
     assert saved_records[0]["equiv_weight"] == 0.0
-    assert "Eq: 0.00 g" in drawn_texts
+    assert not any(text.startswith("Eq:") for text in drawn_texts)
 
 
 def test_main_dialog_print_label_uses_default_font_for_missing_font(main_dialog, monkeypatch, tmp_path):
@@ -671,7 +669,7 @@ def test_main_dialog_print_label_handles_logo_open_errors(main_dialog, monkeypat
     assert dialog.weight_input.text() == ""
 
 
-def test_main_dialog_print_label_hides_gold_equiv_and_skips_missing_conversion(
+def test_main_dialog_print_label_ignores_legacy_equiv_and_skips_missing_conversion(
     main_dialog,
     monkeypatch,
     tmp_path,
@@ -689,7 +687,6 @@ def test_main_dialog_print_label_hides_gold_equiv_and_skips_missing_conversion(
                 "size": 12,
                 "font": "arial.ttf",
                 "angle": 0,
-                "show_for_gold": False,
             },
             "conv_gold_730": {
                 "show": True,

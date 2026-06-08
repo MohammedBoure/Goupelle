@@ -41,7 +41,7 @@ class MainPrintDialog(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("نظام طباعة ملصقات المجوهرات")
-        self.setFixedSize(500, 660)
+        self.setFixedSize(500, 660) 
         self.config_file = "label_config.json"
         
         init_db()
@@ -87,7 +87,7 @@ class MainPrintDialog(QDialog):
         header_layout.addWidget(self.btn_settings)
         main_layout.addLayout(header_layout)
         
-        group_box = QGroupBox("الوزن و العيار")
+        group_box = QGroupBox()
         grid = QGridLayout(group_box)
         grid.setContentsMargins(20, 30, 20, 20) 
         grid.setVerticalSpacing(15) 
@@ -139,10 +139,10 @@ class MainPrintDialog(QDialog):
         self.lbl_live_equiv.setStyleSheet("""
             background-color: #f0fdf4; 
             color: #166534; 
+            min-height: 40px;
             font-size: 20px; 
             font-weight: 900; 
             border-radius: 12px; 
-            padding: 10px;
             border: 2px dashed #bbf7d0;
         """)
         grid.addWidget(self.lbl_live_equiv, 4, 1)
@@ -150,12 +150,10 @@ class MainPrintDialog(QDialog):
         self.extra_conversion_titles = {}
         self.extra_conversion_labels = {}
         all_extra_refs = []
-        seen_extra_refs = set()
         for refs in LIVE_EXTRA_CONVERSION_REFS.values():
             for ref_label, ref_value in refs:
-                if ref_label not in seen_extra_refs:
+                if ref_label not in self.extra_conversion_labels:
                     all_extra_refs.append((ref_label, ref_value))
-                    seen_extra_refs.add(ref_label)
 
         for row_offset, (ref_label, _) in enumerate(all_extra_refs, start=5):
             title = QLabel(f"{ref_label}:")
@@ -200,13 +198,13 @@ class MainPrintDialog(QDialog):
         
         try:
             actual_weight = float(weight_val) if weight_val else 0.0
+            # قراءة العيارات المرجعية من ملف الإعدادات المعرف من قبلك
             ref_gold = float(cfg.get("ref_gold", 730.0))
             ref_silver = float(cfg.get("ref_silver", 925.0))
             
             equiv_val = 0.0
             current_ref = 0.0
             actual_purity = 0.0
-            metal_type = None
             
             if gold_val:
                 metal_type = "Or"
@@ -220,7 +218,10 @@ class MainPrintDialog(QDialog):
                 if ref_silver > 0:
                     equiv_val = (actual_weight * actual_purity) / ref_silver
                     current_ref = ref_silver
+            else:
+                metal_type = None
             
+            # إذا كان هناك حساب، اعرض العيار المرجعي بجانب النتيجة
             if current_ref > 0:
                 self.lbl_live_title.setText(f"{current_ref:g}:")
                 self.lbl_live_equiv.setText(f"{equiv_val:.2f} g")
@@ -275,7 +276,10 @@ class MainPrintDialog(QDialog):
                 "extra": {"show": True, "text": "mg/g"},
                 "weight": {"show": True, "text": "الوزن:", "x": 5, "y": 14, "size": 12, "font": "arial.ttf", "angle": 0},
                 "date": {"show": False, "text": "التاريخ:", "x": 5, "y": 18, "size": 10, "font": "arial.ttf", "angle": 0},
-                "equiv_weight": {"show": True, "text": "المحول:", "x": 20, "y": 14, "size": 12, "font": "arial.ttf", "angle": 0} 
+                "conv_gold_730": {"show": False, "text": "730:", "x": 20, "y": 14, "size": 12, "font": "arial.ttf", "angle": 0},
+                "conv_gold_750": {"show": False, "text": "750:", "x": 20, "y": 17, "size": 12, "font": "arial.ttf", "angle": 0},
+                "conv_silver_925": {"show": False, "text": "925:", "x": 20, "y": 14, "size": 12, "font": "arial.ttf", "angle": 0},
+                "conv_silver_9999": {"show": False, "text": "999.9:", "x": 20, "y": 17, "size": 12, "font": "arial.ttf", "angle": 0},
             }
         }
         if os.path.exists(self.config_file):
@@ -394,10 +398,6 @@ class MainPrintDialog(QDialog):
                     if extra_txt: p_text += f" {extra_txt}"
                 els["purity"]["text"] = p_text
 
-            if "equiv_weight" in els:
-                prefix = els["equiv_weight"].get("text", "")
-                els["equiv_weight"]["text"] = f"{prefix} {equiv_val:.2f} g".strip()
-                
             for key, conversion in LABEL_CONVERSION_ELEMENTS.items():
                 el = els.get(key)
                 if not el:
@@ -405,7 +405,9 @@ class MainPrintDialog(QDialog):
                 if conversion["metal"] != metal_type:
                     el["show"] = False
                     continue
-                ref_value = conversion["ref"]
+                ref_value = conversion.get("ref")
+                if ref_value is None:
+                    ref_value = float(cfg.get(conversion["ref_key"], conversion["default_ref"]))
                 converted_value = 0.0
                 if ref_value > 0:
                     converted_value = (actual_weight * actual_purity) / ref_value
@@ -416,7 +418,7 @@ class MainPrintDialog(QDialog):
                 prefix = els["date"].get("text", "")
                 els["date"]["text"] = f"{prefix} {datetime.now().strftime('%d/%m/%Y %H:%M')}".strip()
 
-            elements_keys = ["id", "store", "metal", "purity", "weight", "date", "equiv_weight", *LABEL_CONVERSION_ELEMENTS.keys()]
+            elements_keys = ["id", "store", "metal", "purity", "weight", "date", *LABEL_CONVERSION_ELEMENTS.keys()]
             for key in elements_keys:
                 el = els.get(key, {})
                 if el.get("show"): 

@@ -122,7 +122,10 @@ class SettingsDialog(QDialog):
                 "extra": {"show": True, "text": "mg/g"},
                 "weight": {"show": True, "text": "الوزن:", "x": 5, "y": 14, "size": 12, "font": "arial.ttf", "angle": 0},
                 "date": {"show": False, "text": "التاريخ:", "x": 5, "y": 18, "size": 10, "font": "arial.ttf", "angle": 0},
-                "equiv_weight": {"show": True, "text": "المحول:", "x": 20, "y": 14, "size": 12, "font": "arial.ttf", "angle": 0}
+                "conv_gold_730": {"show": False, "text": "730:", "x": 20, "y": 14, "size": 12, "font": "arial.ttf", "angle": 0},
+                "conv_gold_750": {"show": False, "text": "750:", "x": 20, "y": 17, "size": 12, "font": "arial.ttf", "angle": 0},
+                "conv_silver_925": {"show": False, "text": "925:", "x": 20, "y": 14, "size": 12, "font": "arial.ttf", "angle": 0},
+                "conv_silver_9999": {"show": False, "text": "999.9:", "x": 20, "y": 17, "size": 12, "font": "arial.ttf", "angle": 0}
             }
         }
         if os.path.exists(self.config_file):
@@ -244,12 +247,13 @@ class SettingsDialog(QDialog):
         v_el.addLayout(row_extra)
 
         create_element_row("weight", "الوزن:")
-        create_element_row("equiv_weight", "الوزن المحول:")
+
+        create_element_row("date", "التاريخ:")
         create_element_row("conv_gold_730", "Or 730:")
         create_element_row("conv_gold_750", "Or 750:")
         create_element_row("conv_silver_925", "Argent 925:")
         create_element_row("conv_silver_9999", "Argent 999.9:")
-        create_element_row("date", "التاريخ:")
+
         form_layout.addWidget(grp_el)
         scroll.setWidget(content)
         left_layout.addWidget(scroll)
@@ -333,14 +337,13 @@ class SettingsDialog(QDialog):
                     img.paste(final_logo, (lx, ly), final_logo)
             except Exception as e: logging.error(f"Logo err: {e}")
 
-        elements_keys = ["id", "store", "metal", "purity", "weight", "equiv_weight", *LABEL_CONVERSION_ELEMENTS.keys(), "date"]
+        elements_keys = ["id", "store", "metal", "purity", "weight", *LABEL_CONVERSION_ELEMENTS.keys(), "date"]
         test_values = {
             "id": "1005",
             "store": "",
             "metal": "Or",
             "purity": "750",
             "weight": "4.25 g",
-            "equiv_weight": "4.37 g",
             "conv_gold_730": "4.37 g",
             "conv_gold_750": "4.25 g",
             "conv_silver_925": "3.45 g",
@@ -350,6 +353,7 @@ class SettingsDialog(QDialog):
 
         for key in elements_keys:
             if getattr(self, f"chk_{key}").isChecked():
+                
                 if key in LABEL_CONVERSION_ELEMENTS and LABEL_CONVERSION_ELEMENTS[key]["metal"] != test_values["metal"]:
                     continue
                 
@@ -390,7 +394,7 @@ class SettingsDialog(QDialog):
             },
             "logo_settings": self.logo_settings
         })
-        elements_keys = ["id", "store", "metal", "purity", "weight", "equiv_weight", *LABEL_CONVERSION_ELEMENTS.keys(), "date"]
+        elements_keys = ["id", "store", "metal", "purity", "weight", *LABEL_CONVERSION_ELEMENTS.keys(), "date"]
         for key in elements_keys:
             self.config["elements"][key] = {
                 "show": getattr(self, f"chk_{key}").isChecked(), "text": getattr(self, f"inp_{key}").text(),

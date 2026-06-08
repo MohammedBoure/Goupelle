@@ -11,7 +11,6 @@ STANDARD_ELEMENT_KEYS = [
     "metal",
     "purity",
     "weight",
-    "equiv_weight",
     "date",
 ]
 
@@ -154,17 +153,17 @@ def test_save_config_writes_conversion_element_options(settings_dialog):
         assert element["angle"] == 270
 
 
-def test_save_config_writes_equivalent_weight_visibility_by_metal(settings_dialog):
+def test_equivalent_weight_setting_is_removed(settings_dialog):
     dialog, config_path = settings_dialog
 
-    dialog.chk_equiv_gold.setChecked(False)
-    dialog.chk_equiv_silver.setChecked(True)
+    assert "equiv_weight" not in dialog.config["elements"]
+    assert not hasattr(dialog, "chk_equiv_weight")
+    assert not hasattr(dialog, "chk_equiv_gold")
+    assert not hasattr(dialog, "chk_equiv_silver")
 
     saved = save_and_load(dialog, config_path)
-    equivalent = saved["elements"]["equiv_weight"]
 
-    assert equivalent["show_for_gold"] is False
-    assert equivalent["show_for_silver"] is True
+    assert "equiv_weight" not in saved["elements"]
 
 
 def test_reference_purity_fields_are_not_required_for_save(settings_dialog):
