@@ -251,15 +251,6 @@ class SettingsDialog(QDialog):
         create_element_row("conv_silver_9999", "Argent 999.9:")
         create_element_row("date", "التاريخ:")
         form_layout.addWidget(grp_el)
-
-        grp_calc = QGroupBox("⚖️ 4. العيار المرجعي للتحويل")
-        f_calc = QFormLayout(grp_calc)
-        self.sp_ref_gold = QDoubleSpinBox(); self.sp_ref_gold.setRange(1, 1000); self.sp_ref_gold.setValue(self.config.get("ref_gold", 730.0))
-        self.sp_ref_silver = QDoubleSpinBox(); self.sp_ref_silver.setRange(1, 1000); self.sp_ref_silver.setValue(self.config.get("ref_silver", 925.0))
-        f_calc.addRow("مرجع الذهب (مثال 730):", self.sp_ref_gold)
-        f_calc.addRow("مرجع الفضة (مثال 925):", self.sp_ref_silver)
-        form_layout.addWidget(grp_calc)
-
         scroll.setWidget(content)
         left_layout.addWidget(scroll)
 
@@ -392,7 +383,7 @@ class SettingsDialog(QDialog):
             "label_width_mm": self.sp_w.value(), "label_height_mm": self.sp_h.value(),
             "gap_mm": self.sp_gap.value(), "offset_x_mm": self.sp_offset_x.value(),
             "offset_y_mm": self.sp_offset_y.value(), "orientation": self.cmb_orient.currentText(),
-            "ref_gold": self.sp_ref_gold.value(), "ref_silver": self.sp_ref_silver.value(),
+            "ref_gold": self.config.get("ref_gold", 730.0), "ref_silver": self.config.get("ref_silver", 925.0),
             "logo": {
                 "show": self.chk_logo.isChecked(), "path": self.lbl_logo_path.text() if self.lbl_logo_path.text() != "لا يوجد شعار" else "",
                 "x": self.sp_logo_x.value(), "y": self.sp_logo_y.value(), "angle": int(self.cmb_logo_angle.currentText().replace("°", ""))
