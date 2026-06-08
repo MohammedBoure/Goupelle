@@ -25,6 +25,13 @@ try:
 except ImportError:
     logging.warning("Arabic reshaping libraries missing. Please run: pip install arabic-reshaper python-bidi")
 
+LABEL_CONVERSION_ELEMENTS = {
+    "conv_gold_730": {"metal": "Or", "ref": 730.0, "label": "730"},
+    "conv_gold_750": {"metal": "Or", "ref": 750.0, "label": "750"},
+    "conv_silver_925": {"metal": "Argent", "ref": 925.0, "label": "925"},
+    "conv_silver_9999": {"metal": "Argent", "ref": 999.9, "label": "999.9"},
+}
+
 class LogoSettingsDialog(QDialog):
     def __init__(self, image_path, current_settings, parent=None):
         super().__init__(parent)
@@ -238,6 +245,10 @@ class SettingsDialog(QDialog):
 
         create_element_row("weight", "الوزن:")
         create_element_row("equiv_weight", "الوزن المحول:")
+        create_element_row("conv_gold_730", "Or 730:")
+        create_element_row("conv_gold_750", "Or 750:")
+        create_element_row("conv_silver_925", "Argent 925:")
+        create_element_row("conv_silver_9999", "Argent 999.9:")
         create_element_row("date", "التاريخ:")
         form_layout.addWidget(grp_el)
 
@@ -331,11 +342,26 @@ class SettingsDialog(QDialog):
                     img.paste(final_logo, (lx, ly), final_logo)
             except Exception as e: logging.error(f"Logo err: {e}")
 
-        elements_keys = ["id", "store", "metal", "purity", "weight", "equiv_weight", "date"]
-        test_values = {"id": "1005", "store": "", "metal": "Or", "purity": "750", "weight": "4.25 g", "equiv_weight": "4.37 g", "date": datetime.now().strftime("%d/%m/%Y")}
+        elements_keys = ["id", "store", "metal", "purity", "weight", "equiv_weight", *LABEL_CONVERSION_ELEMENTS.keys(), "date"]
+        test_values = {
+            "id": "1005",
+            "store": "",
+            "metal": "Or",
+            "purity": "750",
+            "weight": "4.25 g",
+            "equiv_weight": "4.37 g",
+            "conv_gold_730": "4.37 g",
+            "conv_gold_750": "4.25 g",
+            "conv_silver_925": "3.45 g",
+            "conv_silver_9999": "3.19 g",
+            "date": datetime.now().strftime("%d/%m/%Y")
+        }
 
         for key in elements_keys:
             if getattr(self, f"chk_{key}").isChecked():
+                if key in LABEL_CONVERSION_ELEMENTS and LABEL_CONVERSION_ELEMENTS[key]["metal"] != test_values["metal"]:
+                    continue
+                
                 prefix = getattr(self, f"inp_{key}").text()
                 display_text = f"{prefix} {test_values[key]}" if key != "store" else prefix
                 if key == "purity" and self.chk_extra.isChecked():
@@ -373,7 +399,7 @@ class SettingsDialog(QDialog):
             },
             "logo_settings": self.logo_settings
         })
-        elements_keys = ["id", "store", "metal", "purity", "weight", "equiv_weight", "date"]
+        elements_keys = ["id", "store", "metal", "purity", "weight", "equiv_weight", *LABEL_CONVERSION_ELEMENTS.keys(), "date"]
         for key in elements_keys:
             self.config["elements"][key] = {
                 "show": getattr(self, f"chk_{key}").isChecked(), "text": getattr(self, f"inp_{key}").text(),

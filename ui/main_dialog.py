@@ -13,10 +13,17 @@ from .settings_dialog import SettingsDialog
 from database import init_db, save_print_record
 import sys
 
-EXTRA_CONVERSION_REFS = (
-    ("999.9", 999.9),
-    ("750", 750.0),
-)
+LIVE_EXTRA_CONVERSION_REFS = {
+    "Or": (("750", 750.0),),
+    "Argent": (("999.9", 999.9),),
+}
+
+LABEL_CONVERSION_ELEMENTS = {
+    "conv_gold_730": {"metal": "Or", "ref": 730.0, "label": "730"},
+    "conv_gold_750": {"metal": "Or", "ref": 750.0, "label": "750"},
+    "conv_silver_925": {"metal": "Argent", "ref": 925.0, "label": "925"},
+    "conv_silver_9999": {"metal": "Argent", "ref": 999.9, "label": "999.9"},
+}
 
 try:
     from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -40,6 +47,7 @@ class MainPrintDialog(QDialog):
         init_db()
         self.init_ui()
         # self.load_professional_style()  <--- قم بتعطيل هذا السطر
+        self.update_live_equiv()
         self.weight_input.setFocus()
 
     def load_professional_style(self):
@@ -122,9 +130,9 @@ class MainPrintDialog(QDialog):
         grid.addWidget(hline, 3, 0, 1, 2)
 
         # 4. العرض الحي للوزن المحول
-        lbl_live_title = QLabel("الوزن المحول (Eq):")
-        lbl_live_title.setStyleSheet("font-weight: bold; color: #2c3e50;")
-        grid.addWidget(lbl_live_title, 4, 0)
+        self.lbl_live_title = QLabel("الوزن المحول (Eq):")
+        self.lbl_live_title.setStyleSheet("font-weight: bold; color: #2c3e50;")
+        grid.addWidget(self.lbl_live_title, 4, 0)
         
         self.lbl_live_equiv = QLabel("0.00 g")
         self.lbl_live_equiv.setAlignment(Qt.AlignCenter)
@@ -139,8 +147,17 @@ class MainPrintDialog(QDialog):
         """)
         grid.addWidget(self.lbl_live_equiv, 4, 1)
 
+        self.extra_conversion_titles = {}
         self.extra_conversion_labels = {}
-        for row_offset, (ref_label, _) in enumerate(EXTRA_CONVERSION_REFS, start=5):
+        all_extra_refs = []
+        seen_extra_refs = set()
+        for refs in LIVE_EXTRA_CONVERSION_REFS.values():
+            for ref_label, ref_value in refs:
+                if ref_label not in seen_extra_refs:
+                    all_extra_refs.append((ref_label, ref_value))
+                    seen_extra_refs.add(ref_label)
+
+        for row_offset, (ref_label, _) in enumerate(all_extra_refs, start=5):
             title = QLabel(f"{ref_label}:")
             title.setStyleSheet("font-weight: bold; color: #2c3e50;")
             grid.addWidget(title, row_offset, 0)
@@ -157,6 +174,7 @@ class MainPrintDialog(QDialog):
                 border: 2px dashed #fed7aa;
             """)
             grid.addWidget(value_label, row_offset, 1)
+            self.extra_conversion_titles[ref_label] = title
             self.extra_conversion_labels[ref_label] = value_label
 
         main_layout.addWidget(group_box)
@@ -182,38 +200,49 @@ class MainPrintDialog(QDialog):
         
         try:
             actual_weight = float(weight_val) if weight_val else 0.0
-            # قراءة العيارات المرجعية من ملف الإعدادات المعرف من قبلك
             ref_gold = float(cfg.get("ref_gold", 730.0))
             ref_silver = float(cfg.get("ref_silver", 925.0))
             
             equiv_val = 0.0
             current_ref = 0.0
             actual_purity = 0.0
+            metal_type = None
             
             if gold_val:
+                metal_type = "Or"
                 actual_purity = float(gold_val)
                 if ref_gold > 0:
                     equiv_val = (actual_weight * actual_purity) / ref_gold
                     current_ref = ref_gold
             elif silver_val:
+                metal_type = "Argent"
                 actual_purity = float(silver_val)
                 if ref_silver > 0:
                     equiv_val = (actual_weight * actual_purity) / ref_silver
                     current_ref = ref_silver
             
-            # إذا كان هناك حساب، اعرض العيار المرجعي بجانب النتيجة
             if current_ref > 0:
-                self.lbl_live_equiv.setText(f"{equiv_val:.2f} g  ({int(current_ref)})")
+                self.lbl_live_title.setText(f"{current_ref:g}:")
+                self.lbl_live_equiv.setText(f"{equiv_val:.2f} g")
             else:
+                self.lbl_live_title.setText("الوزن المحول (Eq):")
                 self.lbl_live_equiv.setText("0.00 g")
-            self.update_extra_conversions(actual_weight, actual_purity)
+            self.update_extra_conversions(actual_weight, actual_purity, metal_type)
                 
         except ValueError:
+            self.lbl_live_title.setText("الوزن المحول (Eq):")
             self.lbl_live_equiv.setText("0.00 g")
-            self.update_extra_conversions(0.0, 0.0)
+            self.update_extra_conversions(0.0, 0.0, None)
 
-    def update_extra_conversions(self, actual_weight, actual_purity):
-        for ref_label, ref_value in EXTRA_CONVERSION_REFS:
+    def update_extra_conversions(self, actual_weight, actual_purity, metal_type):
+        visible_refs = LIVE_EXTRA_CONVERSION_REFS.get(metal_type, ())
+        visible_labels = {ref_label for ref_label, _ in visible_refs}
+        for ref_label, title_label in self.extra_conversion_titles.items():
+            is_visible = ref_label in visible_labels
+            title_label.setVisible(is_visible)
+            self.extra_conversion_labels[ref_label].setVisible(is_visible)
+
+        for ref_label, ref_value in visible_refs:
             result = 0.0
             if actual_weight > 0 and actual_purity > 0 and ref_value > 0:
                 result = (actual_weight * actual_purity) / ref_value
@@ -369,11 +398,25 @@ class MainPrintDialog(QDialog):
                 prefix = els["equiv_weight"].get("text", "")
                 els["equiv_weight"]["text"] = f"{prefix} {equiv_val:.2f} g".strip()
                 
+            for key, conversion in LABEL_CONVERSION_ELEMENTS.items():
+                el = els.get(key)
+                if not el:
+                    continue
+                if conversion["metal"] != metal_type:
+                    el["show"] = False
+                    continue
+                ref_value = conversion["ref"]
+                converted_value = 0.0
+                if ref_value > 0:
+                    converted_value = (actual_weight * actual_purity) / ref_value
+                prefix = el.get("text", conversion["label"] + ":")
+                el["text"] = f"{prefix} {converted_value:.2f} g".strip()
+                
             if "date" in els:
                 prefix = els["date"].get("text", "")
                 els["date"]["text"] = f"{prefix} {datetime.now().strftime('%d/%m/%Y %H:%M')}".strip()
 
-            elements_keys = ["id", "store", "metal", "purity", "weight", "date", "equiv_weight"]
+            elements_keys = ["id", "store", "metal", "purity", "weight", "date", "equiv_weight", *LABEL_CONVERSION_ELEMENTS.keys()]
             for key in elements_keys:
                 el = els.get(key, {})
                 if el.get("show"): 
